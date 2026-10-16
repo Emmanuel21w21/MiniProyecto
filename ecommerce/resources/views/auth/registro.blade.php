@@ -5,9 +5,10 @@
 @section('contenido')
     <div class="row justify-content-center">
         <div class="col-md-7 col-lg-6">
-            <div class="card shadow-sm">
+            <div class="card auth-card">
                 <div class="card-body p-4">
-                    <h1 class="h3 mb-4 text-center">Crear cuenta</h1>
+                    <span class="eyebrow">Empieza tu experiencia</span>
+                    <h1 class="h3 mb-4">Crear cuenta</h1>
 
                     <form method="POST" action="{{ route('registro.enviar') }}" novalidate>
                         @csrf

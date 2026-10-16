@@ -3,20 +3,22 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('titulo', 'Mi E-commerce') | {{ config('app.name') }}</title>
+    <title>@yield('titulo', 'XGAMESHOP') | {{ config('app.name') }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: #f6f7f9; }
-        .hero { background: linear-gradient(135deg, #1f3a5f, #3c6e9f); color: #fff; }
-        footer { color: #6c757d; }
-    </style>
+    <link href="{{ asset('css/gamer-theme.css') }}?v={{ filemtime(public_path('css/gamer-theme.css')) }}" rel="stylesheet">
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        @vite('resources/js/app.js')
+    @endif
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark site-nav">
     <div class="container">
-        <a class="navbar-brand fw-semibold" href="{{ route('inicio') }}">🛒 Mi E-commerce</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
+        <a class="navbar-brand fw-semibold" href="{{ route('inicio') }}">
+            <span class="brand-mark" aria-hidden="true">🎮</span>
+            <span>XGAMESHOP</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-controls="menu" aria-expanded="false" aria-label="Abrir menú">
             <span class="navbar-toggler-icon"></span>
         </button>
 
@@ -53,7 +55,7 @@
     </div>
 </nav>
 
-<main class="flex-grow-1">
+<main class="flex-grow-1 site-main">
     <div class="container py-4">
         @if(session('exito'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -72,8 +74,8 @@
     </div>
 </main>
 
-<footer class="text-center py-3 border-top bg-white">
-    <small>&copy; {{ date('Y') }} Mi E-commerce · Proyecto académico</small>
+<footer class="text-center site-footer">
+    <small>&copy; {{ date('Y') }} XGAMESHOP · Proyecto académico</small>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

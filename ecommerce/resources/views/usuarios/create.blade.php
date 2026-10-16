@@ -5,8 +5,12 @@
 @section('contenido')
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-            <h1 class="mb-3">Nuevo usuario</h1>
-            <div class="card shadow-sm">
+            <header class="page-heading">
+                <span class="eyebrow">Administración</span>
+                <h1>Nuevo usuario</h1>
+                <p class="mb-0">Completa los datos para dar de alta un usuario.</p>
+            </header>
+            <div class="card">
                 <div class="card-body p-4">
                     <form method="POST" action="{{ route('usuarios.store') }}" novalidate>
                         @csrf

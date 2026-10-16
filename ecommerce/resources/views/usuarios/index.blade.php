@@ -3,13 +3,16 @@
 @section('titulo', 'Usuarios')
 
 @section('contenido')
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="mb-0">Usuarios</h1>
+    <div class="d-flex justify-content-between align-items-end gap-3 mb-4">
+        <header class="page-heading mb-0">
+            <span class="eyebrow">Administración</span>
+            <h1 class="mb-0">Usuarios</h1>
+        </header>
         <a href="{{ route('usuarios.create') }}" class="btn btn-primary">+ Nuevo usuario</a>
     </div>
 
     {{-- Búsqueda y filtro por rol --}}
-    <form method="GET" action="{{ route('usuarios.index') }}" class="row g-2 mb-3">
+    <form method="GET" action="{{ route('usuarios.index') }}" class="row g-2 filter-panel">
         <div class="col-md-6">
             <input type="text" name="buscar" value="{{ request('buscar') }}" class="form-control"
                    placeholder="Buscar por nombre o correo">
@@ -28,7 +31,7 @@
         </div>
     </form>
 
-    <div class="card shadow-sm">
+    <div class="card">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">

@@ -3,8 +3,12 @@
 @section('titulo', 'Quiénes somos')
 
 @section('contenido')
-    <h1 class="mb-3">Quiénes somos</h1>
-    <div class="card shadow-sm">
+    <header class="page-heading">
+        <span class="eyebrow">Nuestra historia</span>
+        <h1>Quiénes somos</h1>
+        <p class="mb-0">Conoce al equipo y los principios detrás de esta tienda.</p>
+    </header>
+    <div class="card info-card">
         <div class="card-body">
             <p>
                 Somos una tienda en línea creada por estudiantes como proyecto académico. Nuestro objetivo es ofrecer
