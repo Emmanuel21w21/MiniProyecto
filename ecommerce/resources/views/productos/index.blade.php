@@ -14,6 +14,11 @@
             <div class="col-md-6 col-lg-4">
                 <article class="card h-100">
                     <div class="card-body">
+                        @if($producto->imagen_path)
+                            <img src="{{ Illuminate\Support\Facades\Storage::disk('public')->url($producto->imagen_path) }}"
+                                 alt="Imagen de {{ $producto->nombre }}" class="img-fluid rounded mb-3"
+                                 style="width: 100%; height: 220px; object-fit: contain;">
+                        @endif
                         <h2 class="h5">{{ $producto->nombre }}</h2>
                         <p>{{ $producto->descripcion }}</p>
                         <p class="mb-1"><strong>${{ number_format((float) $producto->precio, 2) }}</strong></p>

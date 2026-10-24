@@ -6,7 +6,10 @@ use App\Http\Requests\StoreProductoRequest;
 use App\Http\Requests\UpdateProductoRequest;
 use App\Models\Categoria;
 use App\Models\Producto;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class ProductoController extends Controller
 {
@@ -32,6 +35,12 @@ class ProductoController extends Controller
         $datos = $request->validated();
         $categorias = $datos['categorias'] ?? [];
         unset($datos['categorias']);
+        $imagen = $datos['imagen'] ?? null;
+        unset($datos['imagen']);
+
+        if ($imagen instanceof UploadedFile) {
+            $datos['imagen_path'] = $this->guardarImagen($imagen);
+        }
 
         $producto = $request->user()->productos()->create($datos);
         $producto->categorias()->sync($categorias);
@@ -61,9 +70,20 @@ class ProductoController extends Controller
         $datos = $request->validated();
         $categorias = $datos['categorias'] ?? [];
         unset($datos['categorias']);
+        $imagen = $datos['imagen'] ?? null;
+        unset($datos['imagen']);
+        $imagenAnterior = $producto->imagen_path;
+
+        if ($imagen instanceof UploadedFile) {
+            $datos['imagen_path'] = $this->guardarImagen($imagen);
+        }
 
         $producto->update($datos);
         $producto->categorias()->sync($categorias);
+
+        if ($imagen instanceof UploadedFile && $imagenAnterior !== null) {
+            $this->eliminarImagen($imagenAnterior);
+        }
 
         Log::channel('productos')->info('Producto editado', [
             'producto_id' => $producto->id,
@@ -78,7 +98,12 @@ class ProductoController extends Controller
     {
         $this->authorize('delete', $producto);
         $productoId = $producto->id;
+        $imagenPath = $producto->imagen_path;
         $producto->delete();
+
+        if ($imagenPath !== null) {
+            $this->eliminarImagen($imagenPath);
+        }
 
         Log::channel('productos')->info('Producto eliminado', [
             'producto_id' => $productoId,
@@ -87,5 +112,25 @@ class ProductoController extends Controller
         ]);
 
         return redirect()->route('productos.index')->with('exito', 'Producto eliminado correctamente.');
+    }
+
+    private function guardarImagen(UploadedFile $imagen): string
+    {
+        $ruta = $imagen->storePublicly('productos', 'public');
+
+        if ($ruta === false) {
+            throw new RuntimeException('No se pudo guardar la imagen del producto.');
+        }
+
+        return $ruta;
+    }
+
+    private function eliminarImagen(string $ruta): void
+    {
+        $disco = Storage::disk('public');
+
+        if ($disco->exists($ruta) && ! $disco->delete($ruta)) {
+            throw new RuntimeException('No se pudo eliminar la imagen anterior del producto.');
+        }
     }
 }

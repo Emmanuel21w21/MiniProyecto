@@ -9,6 +9,21 @@
     <textarea id="descripcion" name="descripcion" class="form-control @error('descripcion') is-invalid @enderror" required>{{ old('descripcion', $producto->descripcion ?? '') }}</textarea>
     @error('descripcion')<div class="invalid-feedback">{{ $message }}</div>@enderror
 </div>
+<div class="mb-3">
+    <label for="imagen" class="form-label">Imagen del producto</label>
+    <input id="imagen" name="imagen" type="file" accept="image/jpeg,image/png,image/webp"
+           class="form-control @error('imagen') is-invalid @enderror">
+    <div class="form-text">Formatos permitidos: JPG, PNG o WEBP. Máximo 5 MB. Opcional.</div>
+    @error('imagen')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    @if(isset($producto) && $producto->imagen_path)
+        <div class="mt-3">
+            <img src="{{ Illuminate\Support\Facades\Storage::disk('public')->url($producto->imagen_path) }}"
+                 alt="Imagen actual de {{ $producto->nombre }}" class="img-thumbnail"
+                 style="max-width: 240px; max-height: 180px; object-fit: contain;">
+            <p class="form-text mb-0">Al seleccionar otra imagen, se reemplazará la actual.</p>
+        </div>
+    @endif
+</div>
 <div class="row">
     <div class="col-md-6 mb-3">
         <label for="precio" class="form-label">Precio</label>

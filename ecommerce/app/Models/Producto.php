@@ -18,6 +18,7 @@ class Producto extends Model
         'precio',
         'existencia',
         'usuario_id',
+        'imagen_path',
     ];
 
     protected function casts(): array

@@ -19,6 +19,7 @@ class StoreProductoRequest extends FormRequest
             'descripcion' => ['required', 'string', 'max:5000'],
             'precio' => ['required', 'numeric', 'min:0.01', 'max:99999999.99'],
             'existencia' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'imagen' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'categorias' => ['nullable', 'array'],
             'categorias.*' => ['integer', Rule::exists('categorias', 'id')],
         ];
