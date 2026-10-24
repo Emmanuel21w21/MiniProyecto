@@ -19,6 +19,20 @@ class ProductoController extends Controller
 
         return view('productos.index', [
             'productos' => Producto::with(['usuario', 'categorias'])->latest()->paginate(12),
+            'categoriaSeleccionada' => null,
+        ]);
+    }
+
+    public function porCategoria(Categoria $categoria)
+    {
+        $this->authorize('viewAny', Producto::class);
+
+        return view('productos.index', [
+            'productos' => $categoria->productos()
+                ->with(['usuario', 'categorias'])
+                ->latest()
+                ->paginate(12),
+            'categoriaSeleccionada' => $categoria,
         ]);
     }
 

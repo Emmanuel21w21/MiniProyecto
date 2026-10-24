@@ -121,6 +121,41 @@ class EcommerceTest extends TestCase
         $this->actingAs($gerente)->get(route('productos.create'))->assertOk();
     }
 
+    public function test_category_links_show_only_products_in_that_category(): void
+    {
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.categorias@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_CLIENTE,
+        ]);
+        $vendedor = Usuario::factory()->create([
+            'correo' => 'vendedor.categorias@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_GERENTE,
+        ]);
+        $consolas = Categoria::create(['nombre' => 'Consolas']);
+        $accesorios = Categoria::create(['nombre' => 'Accesorios']);
+        $productoConsola = $vendedor->productos()->create([
+            'nombre' => 'Consola de prueba',
+            'descripcion' => 'Descripción de consola',
+            'precio' => 100,
+            'existencia' => 1,
+        ]);
+        $productoAccesorio = $vendedor->productos()->create([
+            'nombre' => 'Control de prueba',
+            'descripcion' => 'Descripción de control',
+            'precio' => 50,
+            'existencia' => 1,
+        ]);
+        $productoConsola->categorias()->attach($consolas);
+        $productoAccesorio->categorias()->attach($accesorios);
+
+        $this->actingAs($cliente)
+            ->get(route('categorias.productos', $consolas))
+            ->assertOk()
+            ->assertSee('Consola de prueba')
+            ->assertDontSee('Control de prueba')
+            ->assertSee('Ver todos los productos');
+    }
+
     public function test_manager_can_complete_product_and_category_crud(): void
     {
         $gerente = Usuario::factory()->create([
@@ -186,7 +221,12 @@ class EcommerceTest extends TestCase
             'usuario_id' => $vendedor->id,
         ]);
 
-        $this->actingAs($cliente)->post(route('ventas.store'), [
+        $this->actingAs($cliente)
+            ->get(route('ventas.index'))
+            ->assertOk()
+            ->assertSee('Mis compras');
+
+        $this->post(route('ventas.store'), [
             'producto_id' => $producto->id,
             'fecha' => now()->toDateString(),
         ])->assertRedirect(route('ventas.index'));
@@ -199,6 +239,56 @@ class EcommerceTest extends TestCase
             'total' => 999.50,
         ]);
         $this->assertSame(1, Venta::count());
+    }
+
+    public function test_customer_can_only_see_their_own_purchases(): void
+    {
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.historial@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_CLIENTE,
+        ]);
+        $otroCliente = Usuario::factory()->create([
+            'correo' => 'otro.historial@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_CLIENTE,
+        ]);
+        $vendedor = Usuario::factory()->create([
+            'correo' => 'vendedor.historial@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_GERENTE,
+        ]);
+        $productoPropio = Producto::create([
+            'nombre' => 'Compra propia',
+            'descripcion' => 'Descripción',
+            'precio' => 100,
+            'existencia' => 1,
+            'usuario_id' => $vendedor->id,
+        ]);
+        $productoAjeno = Producto::create([
+            'nombre' => 'Compra ajena',
+            'descripcion' => 'Descripción',
+            'precio' => 200,
+            'existencia' => 1,
+            'usuario_id' => $vendedor->id,
+        ]);
+        Venta::create([
+            'producto_id' => $productoPropio->id,
+            'vendedor_id' => $vendedor->id,
+            'cliente_id' => $cliente->id,
+            'fecha' => now()->toDateString(),
+            'total' => 100,
+        ]);
+        Venta::create([
+            'producto_id' => $productoAjeno->id,
+            'vendedor_id' => $vendedor->id,
+            'cliente_id' => $otroCliente->id,
+            'fecha' => now()->toDateString(),
+            'total' => 200,
+        ]);
+
+        $this->actingAs($cliente)
+            ->get(route('ventas.index'))
+            ->assertOk()
+            ->assertSee('Compra propia')
+            ->assertDontSee('Compra ajena');
     }
 
     public function test_demo_seeders_can_be_run_repeatedly(): void

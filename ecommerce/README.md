@@ -41,9 +41,11 @@ Valores de `rol`: `administrador`, `gerente`, `cliente`.
 - El administrador crea, edita y elimina usuarios.
 - El gerente puede editar exclusivamente clientes; las políticas impiden editar administradores o gerentes.
 - El gerente administra productos propios y categorías.
-- Los clientes consultan el catálogo y registran compras; una transacción valida y descuenta existencias.
+- Los clientes consultan el catálogo, registran compras y ven únicamente su propio historial; no pueden consultar las ventas de otros clientes. Una transacción valida y descuenta existencias.
+- Las categorías del catálogo y las etiquetas de categoría de cada producto enlazan a un listado filtrado por esa categoría, con una opción para volver a todos los productos.
 - Las acciones se autorizan con `authorize()` y las Policies en `app/Policies/`. Los Gates `administrar-tienda` y `administrar-usuarios` se definen en `AppServiceProvider` y restringen rutas.
 - Administradores y gerentes pueden cargar o reemplazar imágenes JPG, PNG y WEBP de hasta 5 MB al crear o editar productos. Los archivos se guardan en el disco público y se muestran en el catálogo.
+- El menú de accesos rápidos permanece visible al navegar por el área autenticada para saltar entre el panel, productos, categorías, ventas y, según el rol, usuarios.
 
 Después de aplicar las migraciones, crea el enlace público de almacenamiento una vez:
 

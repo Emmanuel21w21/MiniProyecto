@@ -10,7 +10,11 @@
     <div class="card"><div class="table-responsive"><table class="table table-hover mb-0">
         <thead><tr><th>Nombre</th><th>Descripción</th><th>Productos</th><th>Acciones</th></tr></thead><tbody>
         @forelse($categorias as $categoria)
-            <tr><td>{{ $categoria->nombre }}</td><td>{{ $categoria->descripcion }}</td><td>{{ $categoria->productos_count }}</td>
+            <tr><td><a href="{{ route('categorias.productos', $categoria) }}">{{ $categoria->nombre }}</a></td><td>{{ $categoria->descripcion }}</td><td>
+                <a href="{{ route('categorias.productos', $categoria) }}" aria-label="Ver {{ $categoria->productos_count }} productos de {{ $categoria->nombre }}">
+                    {{ $categoria->productos_count }}
+                </a>
+            </td>
                 <td>@can('update', $categoria)
                     <a href="{{ route('categorias.edit', $categoria) }}" class="btn btn-sm btn-outline-primary">Editar</a>
                     <form method="POST" action="{{ route('categorias.destroy', $categoria) }}" class="d-inline" onsubmit="return confirm('¿Eliminar esta categoría?')">

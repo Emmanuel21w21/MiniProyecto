@@ -11,7 +11,7 @@
 
     <div class="row g-4">
         <div class="col-md-4">
-            <div class="card dashboard-card">
+            <div class="card dashboard-card h-100">
                 <div class="card-body">
                     <div class="feature-icon" aria-hidden="true">🛍</div>
                     <h5 class="card-title">Catálogo de productos</h5>
@@ -21,17 +21,17 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card dashboard-card">
+            <div class="card dashboard-card h-100">
                 <div class="card-body">
                     <div class="feature-icon" aria-hidden="true">▣</div>
-                    <h5 class="card-title">Mis pedidos</h5>
-                    <p class="card-text">Consulta el historial de tus compras.</p>
-                    <a href="{{ route('ventas.index') }}" class="btn btn-outline-primary">Mis compras</a>
+                    <h5 class="card-title">Mis compras</h5>
+                    <p class="card-text">Consulta únicamente el historial de tus compras.</p>
+                    <a href="{{ route('ventas.index') }}" class="btn btn-outline-primary">Ver mis compras</a>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card dashboard-card">
+            <div class="card dashboard-card h-100">
                 <div class="card-body">
                     <div class="feature-icon" aria-hidden="true">●</div>
                     <h5 class="card-title">Mi perfil</h5>

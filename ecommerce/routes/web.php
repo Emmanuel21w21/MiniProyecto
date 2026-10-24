@@ -63,6 +63,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/productos', [ProductoController::class, 'index'])->name('productos.index');
     Route::get('/categorias', [CategoriaController::class, 'index'])->name('categorias.index');
+    Route::get('/categorias/{categoria}/productos', [ProductoController::class, 'porCategoria'])
+        ->name('categorias.productos');
     Route::resource('ventas', VentaController::class)->except('show');
 
     Route::resource('usuarios', UsuarioController::class)

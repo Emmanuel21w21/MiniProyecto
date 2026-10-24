@@ -18,8 +18,8 @@ class VentaPolicy
     {
         return $usuario->esAdministrador()
             || $usuario->esGerente()
-            || $venta->cliente_id === $usuario->id
-            || $venta->vendedor_id === $usuario->id;
+            || ($usuario->esCliente()
+                && ($venta->cliente_id === $usuario->id || $venta->vendedor_id === $usuario->id));
     }
 
     public function create(Usuario $usuario): bool

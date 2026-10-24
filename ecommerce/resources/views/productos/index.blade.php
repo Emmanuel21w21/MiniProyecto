@@ -4,7 +4,13 @@
 
 @section('contenido')
     <div class="d-flex justify-content-between align-items-end mb-4">
-        <header class="page-heading mb-0"><span class="eyebrow">Catálogo</span><h1 class="mb-0">Productos</h1></header>
+        <header class="page-heading mb-0">
+            <span class="eyebrow">Catálogo</span>
+            <h1 class="mb-0">{{ $categoriaSeleccionada ? 'Categoría: '.$categoriaSeleccionada->nombre : 'Productos' }}</h1>
+            @if($categoriaSeleccionada)
+                <a href="{{ route('productos.index') }}" class="btn btn-link px-0">Ver todos los productos</a>
+            @endif
+        </header>
         @can('create', \App\Models\Producto::class)
             <a href="{{ route('productos.create') }}" class="btn btn-primary">+ Nuevo producto</a>
         @endcan
@@ -25,7 +31,8 @@
                         <p class="text-muted">Existencia: {{ $producto->existencia }} · Vendedor: {{ $producto->usuario->nombre }}</p>
                         <div class="mb-3">
                             @foreach($producto->categorias as $categoria)
-                                <span class="badge text-bg-secondary">{{ $categoria->nombre }}</span>
+                                <a href="{{ route('categorias.productos', $categoria) }}"
+                                   class="badge text-bg-secondary text-decoration-none">{{ $categoria->nombre }}</a>
                             @endforeach
                         </div>
                         @if(auth()->user()->esCliente() && $producto->existencia > 0)

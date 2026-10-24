@@ -24,16 +24,10 @@
 
         <div class="collapse navbar-collapse" id="menu">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link @if(request()->routeIs('inicio')) active @endif" href="{{ route('inicio') }}">Inicio</a></li>
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('quienes-somos')) active @endif" href="{{ route('quienes-somos') }}">Quiénes somos</a></li>
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('mision-vision')) active @endif" href="{{ route('mision-vision') }}">Misión y visión</a></li>
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('ubicacion')) active @endif" href="{{ route('ubicacion') }}">Ubicación</a></li>
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('contacto')) active @endif" href="{{ route('contacto') }}">Contáctanos</a></li>
-                @auth
-                    <li class="nav-item"><a class="nav-link" href="{{ route('productos.index') }}">Productos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('categorias.index') }}">Categorías</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('ventas.index') }}">Ventas</a></li>
-                @endauth
             </ul>
 
             <ul class="navbar-nav align-items-lg-center gap-lg-2">
@@ -44,7 +38,7 @@
 
                 @auth
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('dashboard') }}">
+                        <a class="nav-link @if(request()->routeIs('dashboard*')) active @endif" href="{{ route('dashboard') }}">
                             Mi panel <span class="badge text-bg-secondary text-capitalize">{{ auth()->user()->rol }}</span>
                         </a>
                     </li>
@@ -59,6 +53,45 @@
         </div>
     </div>
 </nav>
+
+@auth
+    <nav class="workspace-nav" aria-label="Navegación del área de trabajo">
+        <div class="container workspace-nav-inner">
+            <span class="workspace-nav-label">Accesos rápidos</span>
+            <div class="workspace-nav-links">
+                <a href="{{ route('dashboard') }}"
+                   class="workspace-nav-link @if(request()->routeIs('dashboard*')) active @endif"
+                   @if(request()->routeIs('dashboard*')) aria-current="page" @endif>
+                    Mi panel
+                </a>
+                <a href="{{ route('productos.index') }}"
+                   class="workspace-nav-link @if(request()->routeIs('productos.*')) active @endif"
+                   @if(request()->routeIs('productos.*')) aria-current="page" @endif>
+                    Productos
+                </a>
+                <a href="{{ route('categorias.index') }}"
+                   class="workspace-nav-link @if(request()->routeIs('categorias.*')) active @endif"
+                   @if(request()->routeIs('categorias.*')) aria-current="page" @endif>
+                    Categorías
+                </a>
+                @can('viewAny', \App\Models\Venta::class)
+                    <a href="{{ route('ventas.index') }}"
+                       class="workspace-nav-link @if(request()->routeIs('ventas.*')) active @endif"
+                       @if(request()->routeIs('ventas.*')) aria-current="page" @endif>
+                        {{ auth()->user()->esCliente() ? 'Mis compras' : 'Ventas' }}
+                    </a>
+                @endcan
+                @can('viewAny', \App\Models\Usuario::class)
+                    <a href="{{ route('usuarios.index') }}"
+                       class="workspace-nav-link @if(request()->routeIs('usuarios.*')) active @endif"
+                       @if(request()->routeIs('usuarios.*')) aria-current="page" @endif>
+                        Usuarios
+                    </a>
+                @endcan
+            </div>
+        </div>
+    </nav>
+@endauth
 
 <main class="flex-grow-1 site-main">
     <div class="container py-4">
