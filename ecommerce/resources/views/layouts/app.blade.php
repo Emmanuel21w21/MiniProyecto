@@ -29,6 +29,11 @@
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('mision-vision')) active @endif" href="{{ route('mision-vision') }}">Misión y visión</a></li>
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('ubicacion')) active @endif" href="{{ route('ubicacion') }}">Ubicación</a></li>
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('contacto')) active @endif" href="{{ route('contacto') }}">Contáctanos</a></li>
+                @auth
+                    <li class="nav-item"><a class="nav-link" href="{{ route('productos.index') }}">Productos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ route('categorias.index') }}">Categorías</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ route('ventas.index') }}">Ventas</a></li>
+                @endauth
             </ul>
 
             <ul class="navbar-nav align-items-lg-center gap-lg-2">

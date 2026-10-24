@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class RegistroRequest extends FormRequest
@@ -16,7 +17,7 @@ class RegistroRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'min:3', 'max:255'],
-            'email' => ['required', 'string', 'email:rfc', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'email:rfc', 'max:255', Rule::unique('users', 'correo')],
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ];
     }

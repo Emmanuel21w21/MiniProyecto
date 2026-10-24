@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\Producto;
+use App\Models\Usuario;
+use App\Models\Venta;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -20,18 +22,22 @@ class DashboardController extends Controller
         return view('dashboards.cliente');
     }
 
-    public function empleado()
+    public function administrador()
     {
-        return view('dashboards.empleado');
+        return view('dashboards.administrador', [
+            'totalUsuarios' => Usuario::count(),
+            'totalProductos' => Producto::count(),
+            'totalVentas' => Venta::count(),
+        ]);
     }
 
     public function gerente()
     {
         return view('dashboards.gerente', [
-            'totalUsuarios' => User::count(),
-            'totalClientes' => User::where('rol', User::ROL_CLIENTE)->count(),
-            'totalEmpleados' => User::where('rol', User::ROL_EMPLEADO)->count(),
-            'totalGerentes' => User::where('rol', User::ROL_GERENTE)->count(),
+            'totalUsuarios' => Usuario::count(),
+            'totalClientes' => Usuario::where('rol', Usuario::ROL_CLIENTE)->count(),
+            'totalAdministradores' => Usuario::where('rol', Usuario::ROL_ADMINISTRADOR)->count(),
+            'totalGerentes' => Usuario::where('rol', Usuario::ROL_GERENTE)->count(),
         ]);
     }
 }

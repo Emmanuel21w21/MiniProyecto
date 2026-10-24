@@ -2,11 +2,14 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PaginaController;
+use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\VentaController;
 use App\Http\Middleware\RoleMiddleware;
-use App\Models\User;
+use App\Models\Usuario;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -48,22 +51,36 @@ Route::middleware('auth')->group(function () {
 
     // Dashboard del Cliente
     Route::get('/dashboard/cliente', [DashboardController::class, 'cliente'])
-        ->middleware(RoleMiddleware::class . ':' . User::ROL_CLIENTE)
+        ->middleware(RoleMiddleware::class.':'.Usuario::ROL_CLIENTE)
         ->name('dashboard.cliente');
 
-    // Dashboard del Empleado
-    Route::get('/dashboard/empleado', [DashboardController::class, 'empleado'])
-        ->middleware(RoleMiddleware::class . ':' . User::ROL_EMPLEADO)
-        ->name('dashboard.empleado');
+    Route::get('/dashboard/administrador', [DashboardController::class, 'administrador'])
+        ->middleware(RoleMiddleware::class.':'.Usuario::ROL_ADMINISTRADOR)
+        ->name('dashboard.administrador');
+    Route::get('/dashboard/gerente', [DashboardController::class, 'gerente'])
+        ->middleware(RoleMiddleware::class.':'.Usuario::ROL_GERENTE)
+        ->name('dashboard.gerente');
 
-    // Dashboard y herramientas de administración del Gerente
-    Route::middleware(RoleMiddleware::class . ':' . User::ROL_GERENTE)->group(function () {
-        Route::get('/dashboard/gerente', [DashboardController::class, 'gerente'])
-            ->name('dashboard.gerente');
+    Route::get('/productos', [ProductoController::class, 'index'])->name('productos.index');
+    Route::get('/categorias', [CategoriaController::class, 'index'])->name('categorias.index');
+    Route::resource('ventas', VentaController::class)->except('show');
 
-        // CRUD de usuarios (index, create, store, edit, update, destroy)
-        Route::resource('usuarios', UsuarioController::class)
-            ->except('show')
-            ->parameters(['usuarios' => 'usuario']);
+    Route::resource('usuarios', UsuarioController::class)
+        ->except('show')
+        ->parameters(['usuarios' => 'usuario']);
+
+    Route::middleware('can:administrar-tienda')->group(function () {
+        Route::get('/productos/create', [ProductoController::class, 'create'])->name('productos.create');
+        Route::post('/productos', [ProductoController::class, 'store'])->name('productos.store');
+        Route::get('/productos/{producto}/edit', [ProductoController::class, 'edit'])->name('productos.edit');
+        Route::put('/productos/{producto}', [ProductoController::class, 'update'])->name('productos.update');
+        Route::delete('/productos/{producto}', [ProductoController::class, 'destroy'])->name('productos.destroy');
+
+        Route::get('/categorias/create', [CategoriaController::class, 'create'])->name('categorias.create');
+        Route::post('/categorias', [CategoriaController::class, 'store'])->name('categorias.store');
+        Route::get('/categorias/{categoria}/edit', [CategoriaController::class, 'edit'])->name('categorias.edit');
+        Route::put('/categorias/{categoria}', [CategoriaController::class, 'update'])->name('categorias.update');
+        Route::delete('/categorias/{categoria}', [CategoriaController::class, 'destroy'])->name('categorias.destroy');
     });
+
 });

@@ -2,17 +2,24 @@
 @php $esEdicion = isset($usuario); @endphp
 
 <div class="mb-3">
-    <label for="name" class="form-label">Nombre completo</label>
-    <input type="text" id="name" name="name" value="{{ old('name', $usuario->name ?? '') }}"
-           class="form-control @error('name') is-invalid @enderror" required>
-    @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    <label for="nombre" class="form-label">Nombre</label>
+    <input type="text" id="nombre" name="nombre" value="{{ old('nombre', $usuario->nombre ?? '') }}"
+           class="form-control @error('nombre') is-invalid @enderror" required>
+    @error('nombre') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>
 
 <div class="mb-3">
-    <label for="email" class="form-label">Correo electrónico</label>
-    <input type="email" id="email" name="email" value="{{ old('email', $usuario->email ?? '') }}"
-           class="form-control @error('email') is-invalid @enderror" required>
-    @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    <label for="apellidos" class="form-label">Apellidos</label>
+    <input type="text" id="apellidos" name="apellidos" value="{{ old('apellidos', $usuario->apellidos ?? '') }}"
+           class="form-control @error('apellidos') is-invalid @enderror" required>
+    @error('apellidos') <div class="invalid-feedback">{{ $message }}</div> @enderror
+</div>
+
+<div class="mb-3">
+    <label for="correo" class="form-label">Correo electrónico</label>
+    <input type="email" id="correo" name="correo" value="{{ old('correo', $usuario->correo ?? '') }}"
+           class="form-control @error('correo') is-invalid @enderror" required>
+    @error('correo') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>
 
 <div class="mb-3">
@@ -27,15 +34,15 @@
 </div>
 
 <div class="mb-3">
-    <label for="password" class="form-label">Contraseña @if($esEdicion)<small class="text-muted">(déjala vacía para no cambiarla)</small>@endif</label>
-    <input type="password" id="password" name="password"
-           class="form-control @error('password') is-invalid @enderror" @unless($esEdicion) required @endunless>
+    <label for="clave" class="form-label">Contraseña @if($esEdicion)<small class="text-muted">(déjala vacía para no cambiarla)</small>@endif</label>
+    <input type="password" id="clave" name="clave"
+           class="form-control @error('clave') is-invalid @enderror" @unless($esEdicion) required @endunless>
     <div class="form-text">Mínimo 8 caracteres, con al menos una letra y un número.</div>
-    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    @error('clave') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>
 
 <div class="mb-4">
-    <label for="password_confirmation" class="form-label">Confirmar contraseña</label>
-    <input type="password" id="password_confirmation" name="password_confirmation" class="form-control"
+    <label for="clave_confirmation" class="form-label">Confirmar contraseña</label>
+    <input type="password" id="clave_confirmation" name="clave_confirmation" class="form-control"
            @unless($esEdicion) required @endunless>
 </div>

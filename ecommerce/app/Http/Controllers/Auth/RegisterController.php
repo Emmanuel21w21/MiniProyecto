@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegistroRequest;
-use App\Models\User;
+use App\Models\Usuario;
 use Illuminate\Support\Facades\Auth;
 
 class RegisterController extends Controller
@@ -21,17 +21,19 @@ class RegisterController extends Controller
      */
     public function registrar(RegistroRequest $request)
     {
-        $usuario = User::create([
-            'name' => $request->validated('name'),
-            'email' => $request->validated('email'),
-            'password' => $request->validated('password'), // se hashea con el cast 'hashed'
-            'rol' => User::ROL_CLIENTE,
+        $nombreCompleto = preg_split('/\s+/', trim($request->validated('name')), 2);
+        $usuario = Usuario::create([
+            'nombre' => $nombreCompleto[0],
+            'apellidos' => $nombreCompleto[1] ?? '',
+            'correo' => $request->validated('email'),
+            'clave' => $request->validated('password'),
+            'rol' => Usuario::ROL_CLIENTE,
         ]);
 
         Auth::login($usuario);
         $request->session()->regenerate();
 
         return redirect()->route($usuario->rutaDashboard())
-            ->with('exito', '¡Cuenta creada! Bienvenido, ' . $usuario->name . '.');
+            ->with('exito', '¡Cuenta creada! Bienvenido, '.$usuario->nombre.'.');
     }
 }

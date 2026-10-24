@@ -10,7 +10,7 @@ class RoleMiddleware
 {
     /**
      * Permite el paso solo si el usuario autenticado tiene alguno de los roles indicados.
-     * Uso en rutas: ->middleware(RoleMiddleware::class . ':gerente,empleado')
+     * Uso en rutas: ->middleware(RoleMiddleware::class . ':gerente,administrador')
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {

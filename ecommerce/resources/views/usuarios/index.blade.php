@@ -8,7 +8,9 @@
             <span class="eyebrow">Administración</span>
             <h1 class="mb-0">Usuarios</h1>
         </header>
-        <a href="{{ route('usuarios.create') }}" class="btn btn-primary">+ Nuevo usuario</a>
+        @can('create', \App\Models\Usuario::class)
+            <a href="{{ route('usuarios.create') }}" class="btn btn-primary">+ Nuevo usuario</a>
+        @endcan
     </div>
 
     {{-- Búsqueda y filtro por rol --}}
@@ -48,13 +50,13 @@
                     @forelse($usuarios as $usuario)
                         <tr>
                             <td>{{ $usuario->id }}</td>
-                            <td>{{ $usuario->name }}</td>
-                            <td>{{ $usuario->email }}</td>
+                            <td>{{ $usuario->nombre }} {{ $usuario->apellidos }}</td>
+                            <td>{{ $usuario->correo }}</td>
                             <td>
                                 @php
                                     $color = match($usuario->rol) {
-                                        'gerente' => 'danger',
-                                        'empleado' => 'warning',
+                                        'administrador' => 'danger',
+                                        'gerente' => 'warning',
                                         default => 'info',
                                     };
                                 @endphp
@@ -62,16 +64,18 @@
                             </td>
                             <td>{{ $usuario->created_at?->format('d/m/Y') }}</td>
                             <td class="text-end">
-                                <a href="{{ route('usuarios.edit', $usuario) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                @can('update', $usuario)
+                                    <a href="{{ route('usuarios.edit', $usuario) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                @endcan
 
-                                @if($usuario->id !== auth()->id())
+                                @can('delete', $usuario)
                                     <form method="POST" action="{{ route('usuarios.destroy', $usuario) }}" class="d-inline"
-                                          onsubmit="return confirm('¿Eliminar a {{ $usuario->name }}? Esta acción no se puede deshacer.')">
+                                          onsubmit="return confirm('¿Eliminar a {{ $usuario->nombre }}? Esta acción no se puede deshacer.')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                                     </form>
-                                @endif
+                                @endcan
                             </td>
                         </tr>
                     @empty

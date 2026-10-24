@@ -8,7 +8,7 @@
             <header class="page-heading">
                 <span class="eyebrow">Administración</span>
                 <h1>Editar usuario</h1>
-                <p class="mb-0">Actualiza la información de {{ $usuario->name }}.</p>
+                <p class="mb-0">Actualiza la información de {{ $usuario->nombre }}.</p>
             </header>
             <div class="card">
                 <div class="card-body p-4">
