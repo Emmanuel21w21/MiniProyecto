@@ -2,19 +2,23 @@
 
 namespace Tests\Feature;
 
+use App\Mail\CodigoVerificacionMail;
 use App\Models\Categoria;
 use App\Models\Producto;
 use App\Models\Usuario;
 use App\Models\Venta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class EcommerceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_usuario_model_authenticates_with_custom_credentials(): void
+    public function test_login_sends_a_verification_code_without_authenticating(): void
     {
+        Mail::fake();
+        $this->travelTo(now()->startOfSecond());
         $cliente = Usuario::factory()->create([
             'correo' => 'cliente.prueba@tuxtla.tecnm.mx',
             'rol' => Usuario::ROL_CLIENTE,
@@ -23,9 +27,101 @@ class EcommerceTest extends TestCase
         $this->post(route('login.enviar'), [
             'email' => $cliente->correo,
             'password' => '123',
+        ])->assertRedirect(route('login.codigo'));
+
+        $this->assertGuest();
+        $codigo = $cliente->codigosVerificacion()->firstOrFail();
+        $this->assertMatchesRegularExpression('/^\d{6}$/', (string) $codigo->codigo);
+        $this->assertFalse($codigo->usado);
+        $this->assertTrue($codigo->fecha_expiracion->equalTo(now()->addMinutes(5)));
+        Mail::assertSent(CodigoVerificacionMail::class, fn (CodigoVerificacionMail $mail) => $mail->hasTo($cliente->correo)
+            && $mail->codigo === (string) $codigo->codigo);
+    }
+
+    public function test_correct_verification_code_completes_login_and_cannot_be_reused(): void
+    {
+        Mail::fake();
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.verificacion@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_CLIENTE,
+        ]);
+
+        $this->post(route('login.enviar'), [
+            'email' => $cliente->correo,
+            'password' => '123',
+        ])->assertRedirect(route('login.codigo'));
+
+        $codigo = $cliente->codigosVerificacion()->firstOrFail();
+
+        $this->get(route('login.codigo'))->assertOk();
+        $this->post(route('login.codigo.verificar'), [
+            'codigo' => (string) $codigo->codigo,
         ])->assertRedirect(route('dashboard.cliente'));
 
         $this->assertAuthenticatedAs($cliente);
+        $this->assertDatabaseHas('codigos_verificacion', [
+            'id' => $codigo->id,
+            'usado' => true,
+        ]);
+    }
+
+    public function test_invalid_credentials_do_not_create_or_send_a_verification_code(): void
+    {
+        Mail::fake();
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.invalido@tuxtla.tecnm.mx',
+        ]);
+
+        $this->post(route('login.enviar'), [
+            'email' => $cliente->correo,
+            'password' => 'incorrecta',
+        ])->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+        $this->assertDatabaseCount('codigos_verificacion', 0);
+        Mail::assertNothingSent();
+    }
+
+    public function test_incorrect_verification_code_does_not_authenticate(): void
+    {
+        Mail::fake();
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.codigo-incorrecto@tuxtla.tecnm.mx',
+        ]);
+
+        $this->post(route('login.enviar'), [
+            'email' => $cliente->correo,
+            'password' => '123',
+        ]);
+
+        $this->post(route('login.codigo.verificar'), [
+            'codigo' => '000000',
+        ])->assertRedirect(route('login.codigo'))
+            ->assertSessionHasErrors('codigo');
+
+        $this->assertGuest();
+    }
+
+    public function test_expired_verification_code_cannot_complete_login(): void
+    {
+        Mail::fake();
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.codigo-expirado@tuxtla.tecnm.mx',
+        ]);
+
+        $this->post(route('login.enviar'), [
+            'email' => $cliente->correo,
+            'password' => '123',
+        ]);
+        $this->travel(6)->minutes();
+
+        $this->post(route('login.codigo.verificar'), [
+            'codigo' => (string) $cliente->codigosVerificacion()->firstOrFail()->codigo,
+        ])->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
     }
 
     public function test_usuario_can_resolve_categories_through_owned_products(): void

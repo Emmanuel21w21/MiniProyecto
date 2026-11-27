@@ -33,6 +33,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login'])
         ->middleware('throttle:5,1') // máx. 5 intentos por minuto
         ->name('login.enviar');
+    Route::get('/login/codigo', [LoginController::class, 'mostrarFormularioCodigo'])
+        ->name('login.codigo');
+    Route::post('/login/codigo', [LoginController::class, 'verificarCodigo'])
+        ->middleware('throttle:5,1')
+        ->name('login.codigo.verificar');
 
     Route::get('/registro', [RegisterController::class, 'mostrarFormulario'])->name('registro');
     Route::post('/registro', [RegisterController::class, 'registrar'])->name('registro.enviar');
