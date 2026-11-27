@@ -31,7 +31,7 @@ class VentaController extends Controller
         $this->authorize('create', Venta::class);
 
         return view('ventas.create', [
-            'productos' => Producto::where('existencia', '>', 0)->orderBy('nombre')->get(),
+            'productos' => Producto::where('existencia', '>', 0)->where('usuario_id', '!=', request()->user()->id)->orderBy('nombre')->get(),
         ]);
     }
 
@@ -42,6 +42,12 @@ class VentaController extends Controller
 
         $venta = DB::transaction(function () use ($request, $datos): Venta {
             $producto = Producto::query()->lockForUpdate()->findOrFail($datos['producto_id']);
+
+            if ($producto->usuario_id === $request->user()->id) {
+                throw ValidationException::withMessages([
+                    'producto_id' => 'No puedes comprar tus propios productos.',
+                ]);
+            }
 
             if ($producto->existencia < 1) {
                 throw ValidationException::withMessages([
@@ -57,6 +63,7 @@ class VentaController extends Controller
                 'cliente_id' => $request->user()->id,
                 'fecha' => $datos['fecha'],
                 'total' => $producto->precio,
+                'estado' => 'pendiente',
             ]);
         });
 
