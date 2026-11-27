@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CodigoVerificacionRequest;
 use App\Http\Requests\LoginRequest;
 use App\Mail\CodigoVerificacionMail;
 use App\Models\CodigoVerificacion;
@@ -96,15 +97,8 @@ class LoginController extends Controller
         ]);
     }
 
-    public function verificarCodigo(Request $request)
+    public function verificarCodigo(CodigoVerificacionRequest $request)
     {
-        $datos = $request->validate([
-            'codigo' => ['required', 'digits:6'],
-        ], [
-            'codigo.required' => 'Ingresa el código de verificación.',
-            'codigo.digits' => 'El código debe contener 6 dígitos.',
-        ]);
-
         $codigoVerificacion = $this->buscarCodigoPendiente($request);
 
         if (! $codigoVerificacion || $codigoVerificacion->usado || ! $codigoVerificacion->fecha_expiracion->isFuture()) {
@@ -115,7 +109,7 @@ class LoginController extends Controller
             ]);
         }
 
-        if (! hash_equals((string) $codigoVerificacion->codigo, $datos['codigo'])) {
+        if (! hash_equals((string) $codigoVerificacion->codigo, $request->validated('codigo'))) {
             Log::channel('autenticacion')->warning('Código de verificación incorrecto', [
                 'usuario_id' => $codigoVerificacion->usuario_id,
                 'ip' => $request->ip(),

@@ -96,6 +96,11 @@ class EcommerceTest extends TestCase
         ]);
 
         $this->post(route('login.codigo.verificar'), [
+            'codigo' => '123',
+        ])->assertRedirect(route('login.codigo'))
+            ->assertSessionHasErrors('codigo');
+
+        $this->post(route('login.codigo.verificar'), [
             'codigo' => '000000',
         ])->assertRedirect(route('login.codigo'))
             ->assertSessionHasErrors('codigo');
