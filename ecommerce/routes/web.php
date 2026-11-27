@@ -8,8 +8,6 @@ use App\Http\Controllers\PaginaController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\VentaController;
-use App\Http\Middleware\RoleMiddleware;
-use App\Models\Usuario;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -33,6 +31,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login'])
         ->middleware('throttle:5,1') // máx. 5 intentos por minuto
         ->name('login.enviar');
+    Route::get('/login/codigo', [LoginController::class, 'mostrarFormularioCodigo'])
+        ->name('login.codigo');
+    Route::post('/login/codigo', [LoginController::class, 'verificarCodigo'])
+        ->middleware('throttle:5,1')
+        ->name('login.codigo.verificar');
 
     Route::get('/registro', [RegisterController::class, 'mostrarFormulario'])->name('registro');
     Route::post('/registro', [RegisterController::class, 'registrar'])->name('registro.enviar');
@@ -49,16 +52,11 @@ Route::middleware('auth')->group(function () {
     // /dashboard envía a cada usuario a su panel según el rol.
     Route::get('/dashboard', [DashboardController::class, 'redirigir'])->name('dashboard');
 
-    // Dashboard del Cliente
     Route::get('/dashboard/cliente', [DashboardController::class, 'cliente'])
-        ->middleware(RoleMiddleware::class.':'.Usuario::ROL_CLIENTE)
         ->name('dashboard.cliente');
-
     Route::get('/dashboard/administrador', [DashboardController::class, 'administrador'])
-        ->middleware(RoleMiddleware::class.':'.Usuario::ROL_ADMINISTRADOR)
         ->name('dashboard.administrador');
     Route::get('/dashboard/gerente', [DashboardController::class, 'gerente'])
-        ->middleware(RoleMiddleware::class.':'.Usuario::ROL_GERENTE)
         ->name('dashboard.gerente');
 
     Route::get('/productos', [ProductoController::class, 'index'])->name('productos.index');
@@ -71,18 +69,15 @@ Route::middleware('auth')->group(function () {
         ->except('show')
         ->parameters(['usuarios' => 'usuario']);
 
-    Route::middleware('can:administrar-tienda')->group(function () {
-        Route::get('/productos/create', [ProductoController::class, 'create'])->name('productos.create');
-        Route::post('/productos', [ProductoController::class, 'store'])->name('productos.store');
-        Route::get('/productos/{producto}/edit', [ProductoController::class, 'edit'])->name('productos.edit');
-        Route::put('/productos/{producto}', [ProductoController::class, 'update'])->name('productos.update');
-        Route::delete('/productos/{producto}', [ProductoController::class, 'destroy'])->name('productos.destroy');
+    Route::get('/productos/create', [ProductoController::class, 'create'])->name('productos.create');
+    Route::post('/productos', [ProductoController::class, 'store'])->name('productos.store');
+    Route::get('/productos/{producto}/edit', [ProductoController::class, 'edit'])->name('productos.edit');
+    Route::put('/productos/{producto}', [ProductoController::class, 'update'])->name('productos.update');
+    Route::delete('/productos/{producto}', [ProductoController::class, 'destroy'])->name('productos.destroy');
 
-        Route::get('/categorias/create', [CategoriaController::class, 'create'])->name('categorias.create');
-        Route::post('/categorias', [CategoriaController::class, 'store'])->name('categorias.store');
-        Route::get('/categorias/{categoria}/edit', [CategoriaController::class, 'edit'])->name('categorias.edit');
-        Route::put('/categorias/{categoria}', [CategoriaController::class, 'update'])->name('categorias.update');
-        Route::delete('/categorias/{categoria}', [CategoriaController::class, 'destroy'])->name('categorias.destroy');
-    });
-
+    Route::get('/categorias/create', [CategoriaController::class, 'create'])->name('categorias.create');
+    Route::post('/categorias', [CategoriaController::class, 'store'])->name('categorias.store');
+    Route::get('/categorias/{categoria}/edit', [CategoriaController::class, 'edit'])->name('categorias.edit');
+    Route::put('/categorias/{categoria}', [CategoriaController::class, 'update'])->name('categorias.update');
+    Route::delete('/categorias/{categoria}', [CategoriaController::class, 'destroy'])->name('categorias.destroy');
 });

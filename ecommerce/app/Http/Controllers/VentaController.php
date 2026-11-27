@@ -19,7 +19,7 @@ class VentaController extends Controller
         $usuario = request()->user();
         $consulta = Venta::with(['producto', 'cliente', 'vendedor'])->latest('fecha');
 
-        if ($usuario->esCliente()) {
+        if (! $usuario->can('viewAll', Venta::class)) {
             $consulta->where('cliente_id', $usuario->id);
         }
 

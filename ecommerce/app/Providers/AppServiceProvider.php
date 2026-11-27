@@ -2,7 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\Categoria;
+use App\Models\Producto;
 use App\Models\Usuario;
+use App\Models\Venta;
+use App\Policies\CategoriaPolicy;
+use App\Policies\ProductoPolicy;
+use App\Policies\UsuarioPolicy;
+use App\Policies\VentaPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,10 +28,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::define('administrar-tienda', fn (Usuario $usuario): bool => $usuario->esAdministrador() || $usuario->esGerente()
-        );
-
-        Gate::define('administrar-usuarios', fn (Usuario $usuario): bool => $usuario->esAdministrador()
-        );
+        Gate::policy(Usuario::class, UsuarioPolicy::class);
+        Gate::policy(Producto::class, ProductoPolicy::class);
+        Gate::policy(Categoria::class, CategoriaPolicy::class);
+        Gate::policy(Venta::class, VentaPolicy::class);
     }
 }
