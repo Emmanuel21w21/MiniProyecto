@@ -218,8 +218,17 @@ class EcommerceTest extends TestCase
         $this->actingAs($gerente)
             ->get(route('usuarios.edit', $cliente))
             ->assertOk();
+        $this->get(route('usuarios.edit', $gerente))->assertForbidden();
         $this->get(route('usuarios.edit', $administrador))->assertForbidden();
         $this->get(route('usuarios.create'))->assertForbidden();
+        $this->delete(route('usuarios.destroy', $cliente))->assertForbidden();
+
+        $this->actingAs($administrador)
+            ->get(route('usuarios.edit', $gerente))
+            ->assertOk();
+        $this->delete(route('usuarios.destroy', $cliente))
+            ->assertRedirect(route('usuarios.index'));
+        $this->assertDatabaseMissing('users', ['id' => $cliente->id]);
     }
 
     public function test_administrator_can_create_users_and_manager_cannot_promote_clients(): void
