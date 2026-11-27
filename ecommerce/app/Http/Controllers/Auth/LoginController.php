@@ -8,9 +8,11 @@ use App\Http\Requests\LoginRequest;
 use App\Mail\CodigoVerificacionMail;
 use App\Models\CodigoVerificacion;
 use App\Models\Usuario;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -37,18 +39,26 @@ class LoginController extends Controller
             'password' => $request->validated('password'),
         ];
 
-        if (! Auth::validate($credenciales)) {
-            Log::channel('autenticacion')->warning('Login incorrecto', [
+        $usuario = Usuario::where('correo', $credenciales['correo'])->first();
+
+        if (! $usuario) {
+            Log::channel('autenticacion')->warning('Usuario no encontrado', [
                 'correo' => $credenciales['correo'],
                 'ip' => $request->ip(),
             ]);
 
-            return back()
-                ->withErrors(['email' => 'Las credenciales no coinciden con nuestros registros.'])
-                ->onlyInput('email');
+            return $this->respuestaCredencialesIncorrectas();
         }
 
-        $usuario = Usuario::where('correo', $credenciales['correo'])->firstOrFail();
+        if (! Hash::check($credenciales['password'], $usuario->getAuthPassword())) {
+            Log::channel('autenticacion')->warning('Contraseña incorrecta', [
+                'usuario_id' => $usuario->id,
+                'correo' => $usuario->correo,
+                'ip' => $request->ip(),
+            ]);
+
+            return $this->respuestaCredencialesIncorrectas();
+        }
 
         // Rota la sesión antes de guardar en ella el estado pendiente de autenticación.
         $request->session()->regenerate();
@@ -71,12 +81,6 @@ class LoginController extends Controller
             (string) $codigoVerificacion->codigo,
         ));
 
-        Log::channel('autenticacion')->info('Primer paso de login exitoso', [
-            'usuario_id' => $usuario->id,
-            'correo' => $usuario->correo,
-            'ip' => $request->ip(),
-        ]);
-
         return redirect()->route('login.codigo');
     }
 
@@ -84,12 +88,16 @@ class LoginController extends Controller
     {
         $codigoVerificacion = $this->buscarCodigoPendiente($request);
 
-        if (! $codigoVerificacion || $codigoVerificacion->usado || ! $codigoVerificacion->fecha_expiracion->isFuture()) {
+        if (! $codigoVerificacion || $codigoVerificacion->usado) {
             $this->limpiarVerificacionPendiente($request);
 
             return redirect()->route('login')->withErrors([
                 'email' => 'El código expiró o ya fue utilizado. Inicia sesión de nuevo.',
             ]);
+        }
+
+        if (! $codigoVerificacion->fecha_expiracion->isFuture()) {
+            return $this->redirigirCodigoExpirado($request, $codigoVerificacion);
         }
 
         return view('auth.verificar-codigo', [
@@ -101,7 +109,12 @@ class LoginController extends Controller
     {
         $codigoVerificacion = $this->buscarCodigoPendiente($request);
 
-        if (! $codigoVerificacion || $codigoVerificacion->usado || ! $codigoVerificacion->fecha_expiracion->isFuture()) {
+        if (! $codigoVerificacion || $codigoVerificacion->usado) {
+            Log::channel('autenticacion')->warning('Código de verificación inválido', [
+                'usuario_id' => $codigoVerificacion?->usuario_id,
+                'ip' => $request->ip(),
+            ]);
+
             $this->limpiarVerificacionPendiente($request);
 
             return redirect()->route('login')->withErrors([
@@ -109,8 +122,12 @@ class LoginController extends Controller
             ]);
         }
 
+        if (! $codigoVerificacion->fecha_expiracion->isFuture()) {
+            return $this->redirigirCodigoExpirado($request, $codigoVerificacion);
+        }
+
         if (! hash_equals((string) $codigoVerificacion->codigo, $request->validated('codigo'))) {
-            Log::channel('autenticacion')->warning('Código de verificación incorrecto', [
+            Log::channel('autenticacion')->warning('Código de verificación inválido', [
                 'usuario_id' => $codigoVerificacion->usuario_id,
                 'ip' => $request->ip(),
             ]);
@@ -130,6 +147,17 @@ class LoginController extends Controller
             ]);
 
         if ($marcadoComoUsado !== 1) {
+            $codigoActual = CodigoVerificacion::find($codigoVerificacion->id);
+
+            if ($codigoActual && ! $codigoActual->fecha_expiracion->isFuture()) {
+                return $this->redirigirCodigoExpirado($request, $codigoActual);
+            }
+
+            Log::channel('autenticacion')->warning('Código de verificación inválido', [
+                'usuario_id' => $codigoVerificacion->usuario_id,
+                'ip' => $request->ip(),
+            ]);
+
             $this->limpiarVerificacionPendiente($request);
 
             return redirect()->route('login')->withErrors([
@@ -186,6 +214,30 @@ class LoginController extends Controller
         $request->session()->forget([
             self::SESSION_CODIGO_ID,
             self::SESSION_RECORDAR,
+        ]);
+    }
+
+    private function respuestaCredencialesIncorrectas(): RedirectResponse
+    {
+        return back()
+            ->withErrors(['email' => 'Las credenciales no coinciden con nuestros registros.'])
+            ->onlyInput('email');
+    }
+
+    private function redirigirCodigoExpirado(
+        Request $request,
+        CodigoVerificacion $codigoVerificacion,
+    ): RedirectResponse {
+        Log::channel('autenticacion')->warning('Código de verificación expirado', [
+            'usuario_id' => $codigoVerificacion->usuario_id,
+            'codigo_verificacion_id' => $codigoVerificacion->id,
+            'ip' => $request->ip(),
+        ]);
+
+        $this->limpiarVerificacionPendiente($request);
+
+        return redirect()->route('login')->withErrors([
+            'email' => 'El código expiró o ya fue utilizado. Inicia sesión de nuevo.',
         ]);
     }
 }

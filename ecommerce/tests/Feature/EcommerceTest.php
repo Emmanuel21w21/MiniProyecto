@@ -8,7 +8,9 @@ use App\Models\Producto;
 use App\Models\Usuario;
 use App\Models\Venta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Psr\Log\LoggerInterface;
 use Tests\TestCase;
 
 class EcommerceTest extends TestCase
@@ -41,6 +43,11 @@ class EcommerceTest extends TestCase
     public function test_correct_verification_code_completes_login_and_cannot_be_reused(): void
     {
         Mail::fake();
+        $logger = $this->mockAuthenticationLogger();
+        $logger->shouldReceive('info')
+            ->with('Login exitoso', \Mockery::type('array'))
+            ->once();
+
         $cliente = Usuario::factory()->create([
             'correo' => 'cliente.verificacion@tuxtla.tecnm.mx',
             'rol' => Usuario::ROL_CLIENTE,
@@ -68,6 +75,11 @@ class EcommerceTest extends TestCase
     public function test_invalid_credentials_do_not_create_or_send_a_verification_code(): void
     {
         Mail::fake();
+        $logger = $this->mockAuthenticationLogger();
+        $logger->shouldReceive('warning')
+            ->with('Contraseña incorrecta', \Mockery::type('array'))
+            ->once();
+
         $cliente = Usuario::factory()->create([
             'correo' => 'cliente.invalido@tuxtla.tecnm.mx',
         ]);
@@ -83,9 +95,33 @@ class EcommerceTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    public function test_missing_user_is_logged_separately(): void
+    {
+        Mail::fake();
+        $logger = $this->mockAuthenticationLogger();
+        $logger->shouldReceive('warning')
+            ->with('Usuario no encontrado', \Mockery::type('array'))
+            ->once();
+
+        $this->post(route('login.enviar'), [
+            'email' => 'inexistente@tuxtla.tecnm.mx',
+            'password' => '123',
+        ])->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+        $this->assertDatabaseCount('codigos_verificacion', 0);
+        Mail::assertNothingSent();
+    }
+
     public function test_incorrect_verification_code_does_not_authenticate(): void
     {
         Mail::fake();
+        $logger = $this->mockAuthenticationLogger();
+        $logger->shouldReceive('warning')
+            ->with('Código de verificación inválido', \Mockery::type('array'))
+            ->once();
+
         $cliente = Usuario::factory()->create([
             'correo' => 'cliente.codigo-incorrecto@tuxtla.tecnm.mx',
         ]);
@@ -111,6 +147,11 @@ class EcommerceTest extends TestCase
     public function test_expired_verification_code_cannot_complete_login(): void
     {
         Mail::fake();
+        $logger = $this->mockAuthenticationLogger();
+        $logger->shouldReceive('warning')
+            ->with('Código de verificación expirado', \Mockery::type('array'))
+            ->once();
+
         $cliente = Usuario::factory()->create([
             'correo' => 'cliente.codigo-expirado@tuxtla.tecnm.mx',
         ]);
@@ -127,6 +168,18 @@ class EcommerceTest extends TestCase
             ->assertSessionHasErrors('email');
 
         $this->assertGuest();
+    }
+
+    private function mockAuthenticationLogger(): \Mockery\MockInterface
+    {
+        $logger = \Mockery::mock(LoggerInterface::class);
+
+        Log::shouldReceive('channel')
+            ->with('autenticacion')
+            ->zeroOrMoreTimes()
+            ->andReturn($logger);
+
+        return $logger;
     }
 
     public function test_usuario_can_resolve_categories_through_owned_products(): void
