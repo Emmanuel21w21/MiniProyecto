@@ -62,6 +62,11 @@ class Usuario extends Authenticatable
         return $this->hasMany(Producto::class, 'usuario_id');
     }
 
+    public function codigosVerificacion(): HasMany
+    {
+        return $this->hasMany(CodigoVerificacion::class, 'usuario_id');
+    }
+
     public function ventasComoCliente(): HasMany
     {
         return $this->hasMany(Venta::class, 'cliente_id');
