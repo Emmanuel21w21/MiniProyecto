@@ -40,7 +40,7 @@ class UsuarioController extends Controller
     {
         $this->authorize('create', Usuario::class);
 
-        return view('usuarios.create', ['roles' => Usuario::ROLES]);
+        return view('usuarios.create');
     }
 
     /** CREATE: guarda el nuevo usuario. */
@@ -60,9 +60,6 @@ class UsuarioController extends Controller
 
         return view('usuarios.edit', [
             'usuario' => $usuario,
-            'roles' => auth()->user()->esAdministrador()
-                ? Usuario::ROLES
-                : [Usuario::ROL_CLIENTE],
         ]);
     }
 

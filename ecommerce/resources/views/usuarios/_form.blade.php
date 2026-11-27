@@ -1,4 +1,4 @@
-{{-- Formulario compartido por "crear" y "editar". Variables: $roles, $usuario (opcional) --}}
+{{-- Formulario compartido por "crear" y "editar". Variable: $usuario (opcional) --}}
 @php $esEdicion = isset($usuario); @endphp
 
 <div class="mb-3">
@@ -26,8 +26,10 @@
     <label for="rol" class="form-label">Rol</label>
     <select id="rol" name="rol" class="form-select @error('rol') is-invalid @enderror" required>
         <option value="">Selecciona un rol…</option>
-        @foreach($roles as $rol)
-            <option value="{{ $rol }}" @selected(old('rol', $usuario->rol ?? '') === $rol)>{{ ucfirst($rol) }}</option>
+        @foreach(\App\Models\Usuario::ROLES as $rol)
+            @can('assignRole', [\App\Models\Usuario::class, $rol])
+                <option value="{{ $rol }}" @selected(old('rol', $usuario->rol ?? '') === $rol)>{{ ucfirst($rol) }}</option>
+            @endcan
         @endforeach
     </select>
     @error('rol') <div class="invalid-feedback">{{ $message }}</div> @enderror

@@ -29,4 +29,20 @@ class UsuarioPolicy
             && $usuario->ventasComoCliente()->doesntExist()
             && $usuario->ventasComoVendedor()->doesntExist();
     }
+
+    public function assignRole(Usuario $actor, string $rol): bool
+    {
+        return $actor->esAdministrador()
+            || ($actor->esGerente() && $rol === Usuario::ROL_CLIENTE);
+    }
+
+    public function viewDashboard(Usuario $actor, string $rol): bool
+    {
+        return match ($rol) {
+            Usuario::ROL_ADMINISTRADOR => $actor->esAdministrador(),
+            Usuario::ROL_GERENTE => $actor->esGerente(),
+            Usuario::ROL_CLIENTE => $actor->esCliente(),
+            default => false,
+        };
+    }
 }

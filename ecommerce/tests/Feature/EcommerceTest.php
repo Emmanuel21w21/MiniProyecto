@@ -217,7 +217,9 @@ class EcommerceTest extends TestCase
 
         $this->actingAs($gerente)
             ->get(route('usuarios.edit', $cliente))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Cliente')
+            ->assertDontSee('Administrador');
         $this->get(route('usuarios.edit', $gerente))->assertForbidden();
         $this->get(route('usuarios.edit', $administrador))->assertForbidden();
         $this->get(route('usuarios.create'))->assertForbidden();
@@ -276,12 +278,45 @@ class EcommerceTest extends TestCase
             'correo' => 'gerente.catalogo@tuxtla.tecnm.mx',
             'rol' => Usuario::ROL_GERENTE,
         ]);
+        $gerente->productos()->create([
+            'nombre' => 'Producto disponible',
+            'descripcion' => 'Producto de prueba',
+            'precio' => 100,
+            'existencia' => 1,
+        ]);
 
         $this->actingAs($cliente)
             ->get(route('productos.index'))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Comprar');
         $this->get(route('productos.create'))->assertForbidden();
-        $this->actingAs($gerente)->get(route('productos.create'))->assertOk();
+        $this->actingAs($gerente)
+            ->get(route('productos.create'))
+            ->assertOk();
+        $this->get(route('productos.index'))->assertDontSee('Comprar');
+    }
+
+    public function test_dashboard_routes_authorize_users_by_policy(): void
+    {
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.dashboard@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_CLIENTE,
+        ]);
+        $gerente = Usuario::factory()->create([
+            'correo' => 'gerente.dashboard@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_GERENTE,
+        ]);
+        $administrador = Usuario::factory()->create([
+            'correo' => 'admin.dashboard@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_ADMINISTRADOR,
+        ]);
+
+        $this->actingAs($cliente)->get(route('dashboard.cliente'))->assertOk();
+        $this->get(route('dashboard.gerente'))->assertForbidden();
+        $this->actingAs($gerente)->get(route('dashboard.gerente'))->assertOk();
+        $this->get(route('dashboard.administrador'))->assertForbidden();
+        $this->actingAs($administrador)->get(route('dashboard.administrador'))->assertOk();
+        $this->get(route('dashboard.cliente'))->assertForbidden();
     }
 
     public function test_category_links_show_only_products_in_that_category(): void
@@ -452,6 +487,13 @@ class EcommerceTest extends TestCase
             ->assertOk()
             ->assertSee('Compra propia')
             ->assertDontSee('Compra ajena');
+
+        $this->actingAs($vendedor)
+            ->get(route('ventas.index'))
+            ->assertOk()
+            ->assertSee('Ventas')
+            ->assertSee('Compra propia')
+            ->assertSee('Compra ajena');
     }
 
     public function test_demo_seeders_can_be_run_repeatedly(): void

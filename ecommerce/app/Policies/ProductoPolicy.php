@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Producto;
 use App\Models\Usuario;
+use App\Models\Venta;
 
 class ProductoPolicy
 {
@@ -32,5 +33,11 @@ class ProductoPolicy
     {
         return $this->update($usuario, $producto)
             && $producto->ventas()->doesntExist();
+    }
+
+    public function purchase(Usuario $usuario, Producto $producto): bool
+    {
+        return $producto->existencia > 0
+            && $usuario->can('create', Venta::class);
     }
 }

@@ -19,11 +19,15 @@ class DashboardController extends Controller
 
     public function cliente()
     {
+        $this->authorize('viewDashboard', [Usuario::class, Usuario::ROL_CLIENTE]);
+
         return view('dashboards.cliente');
     }
 
     public function administrador()
     {
+        $this->authorize('viewDashboard', [Usuario::class, Usuario::ROL_ADMINISTRADOR]);
+
         return view('dashboards.administrador', [
             'totalUsuarios' => Usuario::count(),
             'totalProductos' => Producto::count(),
@@ -33,6 +37,8 @@ class DashboardController extends Controller
 
     public function gerente()
     {
+        $this->authorize('viewDashboard', [Usuario::class, Usuario::ROL_GERENTE]);
+
         return view('dashboards.gerente', [
             'totalUsuarios' => Usuario::count(),
             'totalClientes' => Usuario::where('rol', Usuario::ROL_CLIENTE)->count(),
