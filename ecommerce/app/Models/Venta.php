@@ -16,6 +16,8 @@ class Venta extends Model
         'cliente_id',
         'fecha',
         'total',
+        'estado',
+        'fecha_validacion',
     ];
 
     protected function casts(): array
@@ -23,6 +25,7 @@ class Venta extends Model
         return [
             'fecha' => 'date',
             'total' => 'decimal:2',
+            'fecha_validacion' => 'datetime',
         ];
     }
 
