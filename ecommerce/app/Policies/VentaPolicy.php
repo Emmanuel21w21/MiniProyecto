@@ -36,4 +36,9 @@ class VentaPolicy
     {
         return $usuario->esAdministrador();
     }
+
+    public function validar(Usuario $usuario, Venta $venta): bool
+    {
+        return $usuario->esGerente() && $venta->estado === 'pendiente';
+    }
 }

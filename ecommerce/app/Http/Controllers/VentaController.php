@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreVentaRequest;
 use App\Http\Requests\UpdateVentaRequest;
+use App\Http\Requests\ValidarVentaRequest;
 use App\Models\Producto;
 use App\Models\Usuario;
 use App\Models\Venta;
@@ -126,5 +127,20 @@ class VentaController extends Controller
         });
 
         return redirect()->route('ventas.index')->with('exito', 'Venta eliminada y existencia restaurada.');
+    }
+
+    public function validar(ValidarVentaRequest $request, Venta $venta)
+    {
+        $venta->update([
+            'estado' => 'validada',
+            'fecha_validacion' => now(),
+        ]);
+
+        Log::channel('ventas')->info('Venta validada', [
+            'venta_id' => $venta->id,
+            'gerente_id' => $request->user()->id,
+        ]);
+
+        return redirect()->route('ventas.index')->with('exito', 'Venta validada correctamente.');
     }
 }

@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/categorias/{categoria}/productos', [ProductoController::class, 'porCategoria'])
         ->name('categorias.productos');
     Route::resource('ventas', VentaController::class)->except('show');
+    Route::patch('/ventas/{venta}/validar', [VentaController::class, 'validar'])->name('ventas.validar');
 
     Route::resource('usuarios', UsuarioController::class)
         ->except('show')
