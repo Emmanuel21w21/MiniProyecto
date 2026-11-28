@@ -78,7 +78,11 @@
                     <a href="{{ route('ventas.index') }}"
                        class="workspace-nav-link @if(request()->routeIs('ventas.*')) active @endif"
                        @if(request()->routeIs('ventas.*')) aria-current="page" @endif>
-                        {{ auth()->user()->esCliente() ? 'Mis compras' : 'Ventas' }}
+                        @can('viewAll', \App\Models\Venta::class)
+                            Ventas
+                        @else
+                            Mis compras
+                        @endcan
                     </a>
                 @endcan
                 @can('viewAny', \App\Models\Usuario::class)

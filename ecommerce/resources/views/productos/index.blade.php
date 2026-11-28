@@ -35,14 +35,15 @@
                                    class="badge text-bg-secondary text-decoration-none">{{ $categoria->nombre }}</a>
                             @endforeach
                         </div>
-                        @if(auth()->user()->esCliente() && $producto->existencia > 0)
+                        @can('purchase', $producto)
                             <form method="POST" action="{{ route('ventas.store') }}">
                                 @csrf
                                 <input type="hidden" name="producto_id" value="{{ $producto->id }}">
                                 <input type="hidden" name="fecha" value="{{ now()->toDateString() }}">
                                 <button class="btn btn-primary" type="submit">Comprar</button>
                             </form>
-                        @elseif($producto->existencia < 1)
+                        @endcan
+                        @if($producto->existencia < 1)
                             <span class="badge text-bg-secondary">Agotado</span>
                         @endif
                         @can('update', $producto)

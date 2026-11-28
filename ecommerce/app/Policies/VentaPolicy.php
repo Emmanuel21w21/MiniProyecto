@@ -14,6 +14,11 @@ class VentaPolicy
             || $usuario->esCliente();
     }
 
+    public function viewAll(Usuario $usuario): bool
+    {
+        return $usuario->esAdministrador() || $usuario->esGerente();
+    }
+
     public function view(Usuario $usuario, Venta $venta): bool
     {
         return $usuario->esAdministrador()

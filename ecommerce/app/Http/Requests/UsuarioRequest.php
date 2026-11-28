@@ -8,13 +8,23 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 /**
- * Validación del CRUD de usuarios (alta y edición hecha por el Gerente).
+ * Validación y autorización del CRUD de usuarios.
  */
 class UsuarioRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // El acceso ya está restringido por el middleware de rol.
+        $actor = $this->user();
+
+        if (! $actor) {
+            return false;
+        }
+
+        $usuario = $this->route('usuario');
+
+        return $usuario
+            ? $actor->can('update', $usuario)
+            : $actor->can('create', Usuario::class);
     }
 
     public function rules(): array
@@ -22,6 +32,10 @@ class UsuarioRequest extends FormRequest
         // En edición la ruta trae el usuario; en alta no.
         $usuario = $this->route('usuario');
         $esEdicion = $usuario !== null;
+        $rolesPermitidos = array_filter(
+            Usuario::ROLES,
+            fn (string $rol): bool => $this->user()->can('assignRole', [Usuario::class, $rol]),
+        );
 
         return [
             'nombre' => ['required', 'string', 'min:2', 'max:100'],
@@ -30,9 +44,7 @@ class UsuarioRequest extends FormRequest
                 'required', 'string', 'email:rfc', 'max:255',
                 Rule::unique('users', 'correo')->ignore($usuario?->id),
             ],
-            'rol' => ['required', Rule::in($this->user()->esAdministrador()
-                ? Usuario::ROLES
-                : [Usuario::ROL_CLIENTE])],
+            'rol' => ['required', Rule::in($rolesPermitidos)],
             'clave' => [
                 $esEdicion ? 'nullable' : 'required',
                 'confirmed',

@@ -2,19 +2,25 @@
 
 namespace Tests\Feature;
 
+use App\Mail\CodigoVerificacionMail;
 use App\Models\Categoria;
 use App\Models\Producto;
 use App\Models\Usuario;
 use App\Models\Venta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Psr\Log\LoggerInterface;
 use Tests\TestCase;
 
 class EcommerceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_usuario_model_authenticates_with_custom_credentials(): void
+    public function test_login_sends_a_verification_code_without_authenticating(): void
     {
+        Mail::fake();
+        $this->travelTo(now()->startOfSecond());
         $cliente = Usuario::factory()->create([
             'correo' => 'cliente.prueba@tuxtla.tecnm.mx',
             'rol' => Usuario::ROL_CLIENTE,
@@ -23,9 +29,157 @@ class EcommerceTest extends TestCase
         $this->post(route('login.enviar'), [
             'email' => $cliente->correo,
             'password' => '123',
+        ])->assertRedirect(route('login.codigo'));
+
+        $this->assertGuest();
+        $codigo = $cliente->codigosVerificacion()->firstOrFail();
+        $this->assertMatchesRegularExpression('/^\d{6}$/', (string) $codigo->codigo);
+        $this->assertFalse($codigo->usado);
+        $this->assertTrue($codigo->fecha_expiracion->equalTo(now()->addMinutes(5)));
+        Mail::assertSent(CodigoVerificacionMail::class, fn (CodigoVerificacionMail $mail) => $mail->hasTo($cliente->correo)
+            && $mail->codigo === (string) $codigo->codigo);
+    }
+
+    public function test_correct_verification_code_completes_login_and_cannot_be_reused(): void
+    {
+        Mail::fake();
+        $logger = $this->mockAuthenticationLogger();
+        $logger->shouldReceive('info')
+            ->with('Login exitoso', \Mockery::type('array'))
+            ->once();
+
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.verificacion@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_CLIENTE,
+        ]);
+
+        $this->post(route('login.enviar'), [
+            'email' => $cliente->correo,
+            'password' => '123',
+        ])->assertRedirect(route('login.codigo'));
+
+        $codigo = $cliente->codigosVerificacion()->firstOrFail();
+
+        $this->get(route('login.codigo'))->assertOk();
+        $this->post(route('login.codigo.verificar'), [
+            'codigo' => (string) $codigo->codigo,
         ])->assertRedirect(route('dashboard.cliente'));
 
         $this->assertAuthenticatedAs($cliente);
+        $this->assertDatabaseHas('codigos_verificacion', [
+            'id' => $codigo->id,
+            'usado' => true,
+        ]);
+    }
+
+    public function test_invalid_credentials_do_not_create_or_send_a_verification_code(): void
+    {
+        Mail::fake();
+        $logger = $this->mockAuthenticationLogger();
+        $logger->shouldReceive('warning')
+            ->with('Contraseña incorrecta', \Mockery::type('array'))
+            ->once();
+
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.invalido@tuxtla.tecnm.mx',
+        ]);
+
+        $this->post(route('login.enviar'), [
+            'email' => $cliente->correo,
+            'password' => 'incorrecta',
+        ])->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+        $this->assertDatabaseCount('codigos_verificacion', 0);
+        Mail::assertNothingSent();
+    }
+
+    public function test_missing_user_is_logged_separately(): void
+    {
+        Mail::fake();
+        $logger = $this->mockAuthenticationLogger();
+        $logger->shouldReceive('warning')
+            ->with('Usuario no encontrado', \Mockery::type('array'))
+            ->once();
+
+        $this->post(route('login.enviar'), [
+            'email' => 'inexistente@tuxtla.tecnm.mx',
+            'password' => '123',
+        ])->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+        $this->assertDatabaseCount('codigos_verificacion', 0);
+        Mail::assertNothingSent();
+    }
+
+    public function test_incorrect_verification_code_does_not_authenticate(): void
+    {
+        Mail::fake();
+        $logger = $this->mockAuthenticationLogger();
+        $logger->shouldReceive('warning')
+            ->with('Código de verificación inválido', \Mockery::type('array'))
+            ->once();
+
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.codigo-incorrecto@tuxtla.tecnm.mx',
+        ]);
+
+        $this->post(route('login.enviar'), [
+            'email' => $cliente->correo,
+            'password' => '123',
+        ]);
+
+        $this->post(route('login.codigo.verificar'), [
+            'codigo' => '123',
+        ])->assertRedirect(route('login.codigo'))
+            ->assertSessionHasErrors('codigo');
+
+        $this->post(route('login.codigo.verificar'), [
+            'codigo' => '000000',
+        ])->assertRedirect(route('login.codigo'))
+            ->assertSessionHasErrors('codigo');
+
+        $this->assertGuest();
+    }
+
+    public function test_expired_verification_code_cannot_complete_login(): void
+    {
+        Mail::fake();
+        $logger = $this->mockAuthenticationLogger();
+        $logger->shouldReceive('warning')
+            ->with('Código de verificación expirado', \Mockery::type('array'))
+            ->once();
+
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.codigo-expirado@tuxtla.tecnm.mx',
+        ]);
+
+        $this->post(route('login.enviar'), [
+            'email' => $cliente->correo,
+            'password' => '123',
+        ]);
+        $this->travel(6)->minutes();
+
+        $this->post(route('login.codigo.verificar'), [
+            'codigo' => (string) $cliente->codigosVerificacion()->firstOrFail()->codigo,
+        ])->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    }
+
+    private function mockAuthenticationLogger(): \Mockery\MockInterface
+    {
+        $logger = \Mockery::mock(LoggerInterface::class);
+
+        Log::shouldReceive('channel')
+            ->with('autenticacion')
+            ->zeroOrMoreTimes()
+            ->andReturn($logger);
+
+        return $logger;
     }
 
     public function test_usuario_can_resolve_categories_through_owned_products(): void
@@ -63,9 +217,20 @@ class EcommerceTest extends TestCase
 
         $this->actingAs($gerente)
             ->get(route('usuarios.edit', $cliente))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Cliente')
+            ->assertDontSee('Administrador');
+        $this->get(route('usuarios.edit', $gerente))->assertForbidden();
         $this->get(route('usuarios.edit', $administrador))->assertForbidden();
         $this->get(route('usuarios.create'))->assertForbidden();
+        $this->delete(route('usuarios.destroy', $cliente))->assertForbidden();
+
+        $this->actingAs($administrador)
+            ->get(route('usuarios.edit', $gerente))
+            ->assertOk();
+        $this->delete(route('usuarios.destroy', $cliente))
+            ->assertRedirect(route('usuarios.index'));
+        $this->assertDatabaseMissing('users', ['id' => $cliente->id]);
     }
 
     public function test_administrator_can_create_users_and_manager_cannot_promote_clients(): void
@@ -113,12 +278,45 @@ class EcommerceTest extends TestCase
             'correo' => 'gerente.catalogo@tuxtla.tecnm.mx',
             'rol' => Usuario::ROL_GERENTE,
         ]);
+        $gerente->productos()->create([
+            'nombre' => 'Producto disponible',
+            'descripcion' => 'Producto de prueba',
+            'precio' => 100,
+            'existencia' => 1,
+        ]);
 
         $this->actingAs($cliente)
             ->get(route('productos.index'))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Comprar');
         $this->get(route('productos.create'))->assertForbidden();
-        $this->actingAs($gerente)->get(route('productos.create'))->assertOk();
+        $this->actingAs($gerente)
+            ->get(route('productos.create'))
+            ->assertOk();
+        $this->get(route('productos.index'))->assertDontSee('Comprar');
+    }
+
+    public function test_dashboard_routes_authorize_users_by_policy(): void
+    {
+        $cliente = Usuario::factory()->create([
+            'correo' => 'cliente.dashboard@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_CLIENTE,
+        ]);
+        $gerente = Usuario::factory()->create([
+            'correo' => 'gerente.dashboard@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_GERENTE,
+        ]);
+        $administrador = Usuario::factory()->create([
+            'correo' => 'admin.dashboard@tuxtla.tecnm.mx',
+            'rol' => Usuario::ROL_ADMINISTRADOR,
+        ]);
+
+        $this->actingAs($cliente)->get(route('dashboard.cliente'))->assertOk();
+        $this->get(route('dashboard.gerente'))->assertForbidden();
+        $this->actingAs($gerente)->get(route('dashboard.gerente'))->assertOk();
+        $this->get(route('dashboard.administrador'))->assertForbidden();
+        $this->actingAs($administrador)->get(route('dashboard.administrador'))->assertOk();
+        $this->get(route('dashboard.cliente'))->assertForbidden();
     }
 
     public function test_category_links_show_only_products_in_that_category(): void
@@ -289,6 +487,13 @@ class EcommerceTest extends TestCase
             ->assertOk()
             ->assertSee('Compra propia')
             ->assertDontSee('Compra ajena');
+
+        $this->actingAs($vendedor)
+            ->get(route('ventas.index'))
+            ->assertOk()
+            ->assertSee('Ventas')
+            ->assertSee('Compra propia')
+            ->assertSee('Compra ajena');
     }
 
     public function test_demo_seeders_can_be_run_repeatedly(): void
