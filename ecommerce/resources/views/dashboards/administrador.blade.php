@@ -20,5 +20,6 @@
         <a class="btn btn-outline-primary" href="{{ route('productos.index') }}">Administrar productos</a>
         <a class="btn btn-outline-primary" href="{{ route('categorias.index') }}">Administrar categorías</a>
         <a class="btn btn-outline-primary" href="{{ route('ventas.index') }}">Consultar ventas</a>
+        <a class="btn btn-outline-primary" href="{{ route('admin.estadisticas') }}">Ver estadísticas</a>
     </div>
 @endsection
