@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreVentaRequest;
 use App\Http\Requests\UpdateVentaRequest;
 use App\Http\Requests\ValidarVentaRequest;
+use App\Mail\VentaValidadaCompradorMail;
+use App\Mail\VentaValidadaVendedorMail;
 use App\Models\Producto;
 use App\Models\Usuario;
 use App\Models\Venta;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class VentaController extends Controller
@@ -140,6 +143,10 @@ class VentaController extends Controller
             'venta_id' => $venta->id,
             'gerente_id' => $request->user()->id,
         ]);
+
+        $venta->load(['producto', 'cliente', 'vendedor']);
+        Mail::to($venta->vendedor->email)->send(new VentaValidadaVendedorMail($venta));
+        Mail::to($venta->cliente->email)->send(new VentaValidadaCompradorMail($venta));
 
         return redirect()->route('ventas.index')->with('exito', 'Venta validada correctamente.');
     }
