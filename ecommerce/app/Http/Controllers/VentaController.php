@@ -145,8 +145,8 @@ class VentaController extends Controller
         ]);
 
         $venta->load(['producto', 'cliente', 'vendedor']);
-        Mail::to($venta->vendedor->email)->send(new VentaValidadaVendedorMail($venta));
-        Mail::to($venta->cliente->email)->send(new VentaValidadaCompradorMail($venta));
+        Mail::to($venta->vendedor->correo)->send(new VentaValidadaVendedorMail($venta));
+        Mail::to($venta->cliente->correo)->send(new VentaValidadaCompradorMail($venta));
 
         return redirect()->route('ventas.index')->with('exito', 'Venta validada correctamente.');
     }

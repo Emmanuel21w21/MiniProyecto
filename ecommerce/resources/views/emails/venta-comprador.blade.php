@@ -5,4 +5,4 @@
 <h3>Contacta al vendedor</h3>
 <p>Para coordinar la entrega y el pago, comunícate directamente con el vendedor:</p>
 <p><strong>Nombre:</strong> {{ $venta->vendedor->nombre }} {{ $venta->vendedor->apellidos }}</p>
-<p><strong>Correo:</strong> {{ $venta->vendedor->email }}</p>
+<p><strong>Correo:</strong> {{ $venta->vendedor->correo }}</p>

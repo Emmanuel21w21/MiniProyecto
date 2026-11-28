@@ -4,4 +4,4 @@
 <p><strong>Total:</strong> ${{ number_format((float) $venta->total, 2) }}</p>
 <h3>Datos del comprador</h3>
 <p><strong>Nombre:</strong> {{ $venta->cliente->nombre }} {{ $venta->cliente->apellidos }}</p>
-<p><strong>Correo:</strong> {{ $venta->cliente->email }}</p>
+<p><strong>Correo:</strong> {{ $venta->cliente->correo }}</p>
